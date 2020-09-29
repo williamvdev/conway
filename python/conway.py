@@ -1,4 +1,5 @@
 from tkinter import *
+import os
 
 
 world_height = 50
@@ -8,6 +9,9 @@ frame_time = 100
 
 cell_size = 10
 run = False
+
+border_colour = "grey"
+
 
 grid = [[0] * world_width for i in range(world_height)]
 
@@ -25,20 +29,19 @@ def countNeighbours(x, y):
 
     return neighbour_count
 
-def start():
+def toggleRun():
     global run
-    run = True
+    run = not run
+    btnRunStop.configure(image = images["pause"] if run else images["play"])
+    btnClear.configure(state = DISABLED if run else NORMAL)
+    btnTick.configure(state = DISABLED if run else NORMAL)
     tick()
-
-def stop():
-    global run
-    run = False
 
 def tick():
     global run
     updateGrid()
     drawFrame()
-    if(run == True): frame.after(frame_time, tick)
+    if(run == True): worldFrame.after(frame_time, tick)
 
 def updateGrid():
     global tickCounter
@@ -56,6 +59,7 @@ def updateGrid():
     tickCounter += 1
 
 def clear():
+    global grid
     grid = [[0] * world_width for i in range(world_height)]
 
 def canvas_clicked(event):
@@ -68,34 +72,57 @@ def canvas_clicked(event):
  
 def drawFrame():
     global canvas
-    global frame
+    global worldFrame
+    global drawBorders
     canvas.delete("all")
     for y in range(world_height):
         for x in range(world_width):
             if grid[y][x] == 0:
-                r = canvas.create_rectangle(x * cell_size, y * cell_size, x * cell_size + cell_size - 1, y * cell_size + cell_size - 1, outline="white")
+                r = canvas.create_rectangle(x * cell_size, y * cell_size, x * cell_size + cell_size - 1, y * cell_size + cell_size - 1, outline = border_colour if drawBorders.get() else "white")
             else:
                 r = canvas.create_rectangle(x * cell_size, y * cell_size, x * cell_size + cell_size - 1, y * cell_size + cell_size - 1, fill="black")
     # frame.after(frame_time, drawFrame)
 
+def clearClicked():
+    clear()
+    drawFrame()
 
 root = Tk()
+root.title("Conway's Game of Life")
  
-frame=Frame(root,width=600,height=600)
-frame.pack(expand = True, fill=BOTH)
+worldFrame=Frame(root)
+worldFrame.pack(expand = True, side = TOP)
+buttonFrame = Frame(root)
+buttonFrame.pack(side = BOTTOM)
+
  
-canvas = Canvas(frame,bg='white', width = 600,height = 600, scrollregion = (0,0,world_width * cell_size, world_height * cell_size) )
+canvas = Canvas(worldFrame,bg='white',width=world_width * cell_size,height=world_height * cell_size, scrollregion = (0,0,world_width * cell_size, world_height * cell_size) )
 canvas.bind("<Button-1>", canvas_clicked)
 
-btnDraw = Button(frame, text="draw", command=tick)
-btnStart = Button(frame, text="start", command=start)
-btnStop = Button(frame, text="stop", command=stop)
+
+dirPath = os.path.dirname(__file__) + "/"
+images = {
+    "clear": PhotoImage(file=dirPath + "images/clear.png"),
+    "step_fwd": PhotoImage(file=dirPath + "images/step_forward.png"),
+    "step_back": PhotoImage(file=dirPath + "images/step_back.png"),
+    "play": PhotoImage(file=dirPath + "images/play.png"),
+    "pause": PhotoImage(file=dirPath + "images/pause.png")
+}
+
+btnClear = Button(buttonFrame, image=images["clear"], command=clearClicked)
+btnRunStop = Button(buttonFrame, image=images["play"], command=toggleRun)
+btnTick = Button(buttonFrame, image=images["step_fwd"], command=tick)
+drawBorders = BooleanVar(buttonFrame, True)
+
+chkBorders = Checkbutton(buttonFrame, variable = drawBorders, command=drawFrame, text = "Draw Borders")
 
 drawFrame()
+
  
 canvas.pack(expand = True, fill = BOTH)
-btnDraw.pack()
-btnStart.pack()
-btnStop.pack()
+btnClear.pack(side=LEFT)
+btnRunStop.pack(side=LEFT)
+btnTick.pack(side=LEFT)
+chkBorders.pack(side=LEFT)
  
 root.mainloop()
