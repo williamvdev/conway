@@ -1,5 +1,6 @@
 from tkinter import *
 import os
+import random
 
 
 world_height = 50
@@ -16,6 +17,12 @@ border_colour = "grey"
 grid = [[0] * world_width for i in range(world_height)]
 
 tickCounter = 0
+
+def gridForEach(grid, callback):
+    for x in range(len(grid)):
+        for y in range(len(grid[x])):
+            grid[x][y] = callback(grid[x][y])
+
 
 def countNeighbours(x, y):
     neighbour_rows = [row for row in grid[y-1 if y>0 else 0 : y+2 if y<world_height else world_height]]
@@ -35,6 +42,7 @@ def toggleRun():
     btnRunStop.configure(image = images["pause"] if run else images["play"])
     btnClear.configure(state = DISABLED if run else NORMAL)
     btnTick.configure(state = DISABLED if run else NORMAL)
+    btnRandom.configure(state = DISABLED if run else NORMAL)
     tick()
 
 def tick():
@@ -60,7 +68,11 @@ def updateGrid():
 
 def clear():
     global grid
-    grid = [[0] * world_width for i in range(world_height)]
+    gridForEach(grid, lambda x : 0)
+
+def randomizeGrid():
+    global grid
+    gridForEach(grid, lambda x : random.choice([0,1]))
 
 def canvas_clicked(event):
     # print("canvas clicked", event, canvas.winfo_x(), canvas.winfo_y())
@@ -85,6 +97,10 @@ def drawFrame():
 
 def clearClicked():
     clear()
+    drawFrame()
+
+def randomClicked():
+    randomizeGrid()
     drawFrame()
 
 root = Tk()
@@ -112,17 +128,19 @@ images = {
 btnClear = Button(buttonFrame, image=images["clear"], command=clearClicked)
 btnRunStop = Button(buttonFrame, image=images["play"], command=toggleRun)
 btnTick = Button(buttonFrame, image=images["step_fwd"], command=tick)
+btnRandom = Button(buttonFrame, text="random", command=randomClicked)
 drawBorders = BooleanVar(buttonFrame, True)
 
 chkBorders = Checkbutton(buttonFrame, variable = drawBorders, command=drawFrame, text = "Draw Borders")
-
-drawFrame()
-
- 
 canvas.pack(expand = True, fill = BOTH)
+btnRandom.pack(side=LEFT)
 btnClear.pack(side=LEFT)
 btnRunStop.pack(side=LEFT)
 btnTick.pack(side=LEFT)
 chkBorders.pack(side=LEFT)
+
+drawFrame()
+
+ 
  
 root.mainloop()
